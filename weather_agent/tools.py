@@ -70,10 +70,15 @@ def geocode_place(place: str) -> dict:
         }
 
     if payload.get("status") != "OK" or not payload.get("results"):
+        # Google puts the human-readable reason in an "error_message" field
+        # (e.g. billing not enabled, API not enabled, key restricted).
+        detail = payload.get("error_message", "")
         return {
             "status": "error",
             "error_message": (
-                f"Geocoding failed for '{place}': {payload.get('status', 'UNKNOWN')}"
+                f"Geocoding failed for '{place}': "
+                f"{payload.get('status', 'UNKNOWN')}"
+                + (f" - {detail}" if detail else "")
             ),
         }
 

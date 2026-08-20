@@ -16,3 +16,4 @@ env/
 # ADK / local session state
 .adk/
 *.db
+.venv*/
