@@ -1,0 +1,18 @@
+# Never commit real secrets / env files
+.env
+**/.env
+*.env
+!.env.example
+!**/.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# ADK / local session state
+.adk/
+*.db
