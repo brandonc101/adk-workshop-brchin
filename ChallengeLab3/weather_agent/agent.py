@@ -120,6 +120,12 @@ search_agent = Agent(
     ),
     instruction=_SEARCH_INSTRUCTION,
     tools=[google_search],
+    # Gemini requires google_search to be the ONLY tool. As a sub-agent, ADK
+    # would otherwise add a transfer_to_agent tool alongside it, which Gemini
+    # rejects ("Multiple tools are supported only when they are all search
+    # tools"). Disabling this agent's own transfers keeps google_search alone.
+    disallow_transfer_to_parent=True,
+    disallow_transfer_to_peers=True,
 )
 
 # --- Root coordinator: delegates to the sub-agents ---
