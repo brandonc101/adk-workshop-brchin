@@ -8,8 +8,9 @@ Builds on Challenge Lab 3. Instead of a single search answer, this system
 
 | Agent | Module | Role |
 | --- | --- | --- |
-| `root_agent` | `qa_agent/agent.py` | Coordinator — greets or routes questions to the answer team |
+| `root_agent` | `qa_agent/agent.py` | Coordinator — greets, or routes to the weather agent or the answer team |
 | `greeter_agent` | `qa_agent/greeter_agent.py` | Handles greetings / small talk |
+| `weather_agent` | `qa_agent/weather_agent.py` | US weather questions (NWS + geocoding, US-only) |
 | `answer_team` | `qa_agent/answer_team.py` | **`SequentialAgent`** running the three steps below in order |
 | `search_agent` | `qa_agent/search_agent.py` | Finds data with **`google_search`** → `draft_answer` |
 | `critique_agent` | `qa_agent/critique_agent.py` | Suggests improvements to the draft → `critique` |
@@ -20,7 +21,8 @@ Builds on Challenge Lab 3. Instead of a single search answer, this system
 ```
 root_agent
 ├── greeter_agent                     (greetings)
-└── answer_team  (SequentialAgent)     (questions)
+├── weather_agent                     (US weather questions)
+└── answer_team  (SequentialAgent)     (all other questions)
     ├── search_agent    -> state["draft_answer"]
     ├── critique_agent  -> state["critique"]   (reads {draft_answer})
     └── refine_agent    -> state["final_answer"] (reads {draft_answer} + {critique})
@@ -45,9 +47,11 @@ Search tool only supports Gemini.
 ```bash
 cd ChallengeLab4
 pip install -r requirements.txt
-gcloud services enable aiplatform.googleapis.com modelarmor.googleapis.com
+gcloud services enable aiplatform.googleapis.com \
+    geocoding-backend.googleapis.com modelarmor.googleapis.com
 cp qa_agent/.env.example qa_agent/.env
-# edit qa_agent/.env: GOOGLE_CLOUD_PROJECT and (optional) MODEL_ARMOR_TEMPLATE_ID
+# edit qa_agent/.env: GOOGLE_MAPS_API_KEY (for the weather agent),
+# GOOGLE_CLOUD_PROJECT, and (optional) MODEL_ARMOR_TEMPLATE_ID
 ```
 
 ## Run it
@@ -56,6 +60,7 @@ cp qa_agent/.env.example qa_agent/.env
 # Interactive:
 adk run qa_agent
 #   "hi there"                         -> greeter_agent
+#   "weather in Denver, CO"            -> weather_agent
 #   "what is the tallest mountain?"    -> answer_team (search -> critique -> refine)
 
 # Browser dev UI (Cloud Shell: Web Preview on port 8000):

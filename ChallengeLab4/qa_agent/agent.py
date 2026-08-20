@@ -17,6 +17,7 @@ from .answer_team import answer_team
 from .callbacks import log_model_response, log_user_prompt, screen_input_safety
 from .greeter_agent import greeter_agent
 from .models import resolve_model
+from .weather_agent import weather_agent
 
 # Show the callback log lines ([USER PROMPT], [MODEL RESPONSE], [BLOCKED]).
 logging.basicConfig(level=logging.INFO)
@@ -25,7 +26,9 @@ _INSTRUCTION = """\
 You are a coordinating assistant. Decide how to handle each user message:
 
 * If it is a greeting, thanks, or small talk, transfer to `greeter_agent`.
-* If it is a question that needs a researched, verified answer, transfer to
+* If it is about current weather or a forecast in a US city, transfer to
+  `weather_agent`.
+* For any other question that needs a researched, verified answer, transfer to
   `answer_team`, which will search for information, critique the draft, and
   refine it into a final answer.
 
@@ -35,9 +38,9 @@ Do not answer questions yourself - delegate to the right sub-agent.
 root_agent = Agent(
     name="root_agent",
     model=resolve_model(),
-    description="Coordinator: greets, or routes questions to the answer team.",
+    description="Coordinator: greets, or routes to the weather or answer-team agents.",
     instruction=_INSTRUCTION,
-    sub_agents=[greeter_agent, answer_team],
+    sub_agents=[greeter_agent, weather_agent, answer_team],
     # Log every prompt and screen it for malicious content before routing.
     before_model_callback=[log_user_prompt, screen_input_safety],
     after_model_callback=log_model_response,

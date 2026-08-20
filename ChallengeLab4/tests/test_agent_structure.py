@@ -21,11 +21,13 @@ try:  # ADK is required for these tests; skip cleanly if it isn't installed.
         log_model_response,
         log_user_prompt,
         screen_input_safety,
+        validate_us_location,
     )
     from qa_agent.critique_agent import critique_agent
     from qa_agent.greeter_agent import greeter_agent
     from qa_agent.refine_agent import refine_agent
     from qa_agent.search_agent import search_agent
+    from qa_agent.weather_agent import weather_agent
 
     _ADK_AVAILABLE = True
 except Exception:  # pragma: no cover - depends on the environment
@@ -56,9 +58,16 @@ def _tool_names(agent):
 
 @unittest.skipUnless(_ADK_AVAILABLE, "google-adk not installed in this environment")
 class AnswerTeamStructureTests(unittest.TestCase):
-    def test_root_delegates_to_greeter_and_answer_team(self):
+    def test_root_delegates_to_greeter_weather_and_answer_team(self):
         names = {sa.name for sa in root_agent.sub_agents}
-        self.assertEqual(names, {"greeter_agent", "answer_team"})
+        self.assertEqual(names, {"greeter_agent", "weather_agent", "answer_team"})
+
+    def test_weather_agent_has_tools_and_us_validation(self):
+        names = _tool_names(weather_agent)
+        self.assertIn("geocode_place", names)
+        self.assertIn("get_weather", names)
+        before = _as_list(weather_agent.before_model_callback)
+        self.assertIn(validate_us_location, before)
 
     def test_answer_team_is_a_sequential_workflow(self):
         self.assertIsInstance(answer_team, SequentialAgent)

@@ -27,9 +27,10 @@ from qa_agent.agent import root_agent  # noqa: E402
 APP_NAME = "qa_app"
 USER_ID = "test_user"
 
-# (label, prompt) - a greeting (-> greeter_agent) and a question (-> answer_team).
+# (label, prompt) - one per route: greeter, weather agent, and the answer team.
 QUERIES = [
     ("GREETING", "Hi there! How's it going?"),
+    ("WEATHER", "What's the current weather in Denver, CO? Any alerts?"),
     ("QUESTION", "What is the tallest mountain in the world, and how tall is it?"),
 ]
 
