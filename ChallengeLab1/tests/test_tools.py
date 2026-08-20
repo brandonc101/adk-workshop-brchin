@@ -19,7 +19,7 @@ from unittest.mock import MagicMock, patch
 
 import requests
 
-try: 
+try:
     from weather_agent.tools import geocode_place, get_weather
 except Exception:
     import importlib.util

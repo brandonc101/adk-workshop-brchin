@@ -56,7 +56,11 @@ _GEOCODE_OK = {
             "geometry": {"location": {"lat": 39.7392, "lng": -104.9903}},
             "formatted_address": "Denver, CO, USA",
             "address_components": [
-                {"short_name": "US", "long_name": "United States", "types": ["country", "political"]},
+                {
+                    "short_name": "US",
+                    "long_name": "United States",
+                    "types": ["country", "political"],
+                },
             ],
         }
     ],
