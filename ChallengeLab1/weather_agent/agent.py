@@ -34,8 +34,22 @@ def _resolve_model():
         return os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
     if backend in ("claude", "anthropic"):
-        # e.g. "anthropic/claude-opus-4-8" (Anthropic API) or a Vertex model id.
-        return LiteLlm(model=os.getenv("CLAUDE_MODEL", "anthropic/claude-opus-4-8"))
+        # Two ways to reach Claude:
+        #   * "anthropic/claude-..."  -> Anthropic API (needs ANTHROPIC_API_KEY)
+        #   * "vertex_ai/claude-..."  -> Claude via your GCP project's Vertex AI
+        #     Model Garden (no separate key; uses your gcloud credentials).
+        model_id = os.getenv("CLAUDE_MODEL", "vertex_ai/claude-sonnet-4-5")
+        if model_id.startswith("vertex_ai/"):
+            # LiteLLM reads VERTEXAI_PROJECT / VERTEXAI_LOCATION for Vertex.
+            # Claude on Vertex lives in specific regions (e.g. us-east5), which
+            # differ from the Gemini region, so it has its own location var.
+            os.environ.setdefault(
+                "VERTEXAI_PROJECT", os.getenv("GOOGLE_CLOUD_PROJECT", "")
+            )
+            os.environ.setdefault(
+                "VERTEXAI_LOCATION", os.getenv("CLAUDE_LOCATION", "us-east5")
+            )
+        return LiteLlm(model=model_id)
 
     if backend in ("gpt", "openai"):
         return LiteLlm(model=os.getenv("OPENAI_MODEL", "openai/gpt-4o"))
