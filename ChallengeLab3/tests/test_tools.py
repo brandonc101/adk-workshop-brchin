@@ -24,14 +24,14 @@ import requests
 # so the tests still run in a minimal environment where importing the package
 # __init__ (which pulls in google.adk) would fail.
 try:  # pragma: no cover - exercised implicitly by the environment
-    from weather_agent.tools import geocode_place, get_weather
+    from multi_agent.tools import geocode_place, get_weather
 except Exception:  # pragma: no cover
     import importlib.util
     import pathlib
 
     _tools_path = (
         pathlib.Path(__file__).resolve().parent.parent
-        / "weather_agent"
+        / "multi_agent"
         / "tools.py"
     )
     _spec = importlib.util.spec_from_file_location("weather_agent_tools", _tools_path)

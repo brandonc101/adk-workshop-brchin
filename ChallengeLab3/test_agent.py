@@ -17,15 +17,15 @@ from dotenv import load_dotenv
 
 from demo_utils import select_cities
 
-# Load weather_agent/.env so GOOGLE_MAPS_API_KEY and the Vertex/model settings
+# Load multi_agent/.env so GOOGLE_MAPS_API_KEY and the Vertex/model settings
 # are available when we run this script directly (adk web/run load it for you).
-load_dotenv("weather_agent/.env")
+load_dotenv("multi_agent/.env")
 
 from google.adk.runners import Runner  # noqa: E402  (import after load_dotenv)
 from google.adk.sessions import InMemorySessionService  # noqa: E402
 from google.genai import types  # noqa: E402
 
-from weather_agent.agent import root_agent  # noqa: E402
+from multi_agent.agent import root_agent  # noqa: E402
 
 APP_NAME = "weather_app"
 USER_ID = "test_user"

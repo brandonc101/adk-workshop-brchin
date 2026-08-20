@@ -1,4 +1,4 @@
-"""Unit tests for weather_agent.validation.
+"""Unit tests for multi_agent.validation.
 
 Pure-logic tests: the geocoder and the Model Armor call are injected, so no
 ADK, network, API keys, or google-cloud-modelarmor library are needed.
@@ -16,7 +16,7 @@ from unittest.mock import MagicMock, patch
 # Prefer the package import (works in Cloud Shell); fall back to loading the
 # module file directly where importing the package would pull in google.adk.
 try:  # pragma: no cover - depends on the environment
-    from weather_agent.validation import (
+    from multi_agent.validation import (
         evaluate_user_prompt,
         extract_latest_user_text,
         screen_user_prompt,
@@ -28,7 +28,7 @@ except Exception:  # pragma: no cover
 
     _path = (
         pathlib.Path(__file__).resolve().parent.parent
-        / "weather_agent"
+        / "multi_agent"
         / "validation.py"
     )
     _spec = importlib.util.spec_from_file_location("validation", _path)

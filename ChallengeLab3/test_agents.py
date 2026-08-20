@@ -15,14 +15,14 @@ import asyncio
 
 from dotenv import load_dotenv
 
-# Load weather_agent/.env (Maps key, Vertex/model settings, Model Armor).
-load_dotenv("weather_agent/.env")
+# Load multi_agent/.env (Maps key, Vertex/model settings, Model Armor).
+load_dotenv("multi_agent/.env")
 
 from google.adk.runners import Runner  # noqa: E402
 from google.adk.sessions import InMemorySessionService  # noqa: E402
 from google.genai import types  # noqa: E402
 
-from weather_agent.agent import root_agent  # noqa: E402
+from multi_agent.agent import root_agent  # noqa: E402
 
 APP_NAME = "multi_agent_app"
 USER_ID = "test_user"

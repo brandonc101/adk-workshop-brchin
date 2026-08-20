@@ -2,15 +2,15 @@
 
 Builds on Challenge Lab 2 by turning the weather agent into a **multi-agent
 system**: a coordinator (root) agent that delegates to two specialist
-sub-agents.
+sub-agents, each defined in its own module.
 
 ## The three agents
 
-| Agent | Role | Tools |
-| --- | --- | --- |
-| `root_agent` | Coordinator — receives every request and delegates | (none; `sub_agents`) |
-| `weather_agent` | US weather questions | `geocode_place`, `get_weather` |
-| `search_agent` | General / current-events questions | ADK built-in **`google_search`** |
+| Agent | Module | Role | Tools |
+| --- | --- | --- | --- |
+| `root_agent` | `multi_agent/agent.py` | Coordinator — receives every request and delegates | (none; `sub_agents`) |
+| `weather_agent` | `multi_agent/weather_agent.py` | US weather questions | `geocode_place`, `get_weather` |
+| `search_agent` | `multi_agent/search_agent.py` | General / current-events questions | ADK built-in **`google_search`** |
 
 `root_agent` has `sub_agents=[weather_agent, search_agent]` and instructions to
 route weather questions to `weather_agent` and everything else to
@@ -32,16 +32,20 @@ Gemini model**, because the built-in Google Search tool only supports Gemini.
 
 ```
 ChallengeLab3/
-├── weather_agent/
-│   ├── agent.py          # root_agent + weather_agent + search_agent
+├── multi_agent/
+│   ├── __init__.py
+│   ├── agent.py          # root_agent (coordinator)
+│   ├── weather_agent.py  # weather_agent (sub-agent)
+│   ├── search_agent.py   # search_agent (sub-agent, google_search)
+│   ├── models.py         # shared model selection
 │   ├── callbacks.py      # logging + screen_input_safety + validate_us_location
 │   ├── validation.py     # US check + Model Armor screening
 │   ├── tools.py          # geocode_place + get_weather
 │   └── .env.example
 ├── test_agents.py        # drives the coordinator and prints the event stream
-├── test_agent.py         # weather-only demo (still routes through root_agent)
+├── test_agent.py         # weather-only demo (routes through root_agent)
 ├── demo_utils.py
-├── tests/                # unit tests (tools, validation, demo_utils)
+├── tests/                # unit tests (tools, validation, demo_utils, structure)
 ├── requirements.txt
 └── README.md
 ```
@@ -53,30 +57,39 @@ cd ChallengeLab3
 pip install -r requirements.txt
 gcloud services enable aiplatform.googleapis.com \
     geocoding-backend.googleapis.com modelarmor.googleapis.com
-cp weather_agent/.env.example weather_agent/.env
-# edit weather_agent/.env: GOOGLE_MAPS_API_KEY, GOOGLE_CLOUD_PROJECT,
+cp multi_agent/.env.example multi_agent/.env
+# edit multi_agent/.env: GOOGLE_MAPS_API_KEY, GOOGLE_CLOUD_PROJECT,
 # and (optional) MODEL_ARMOR_TEMPLATE_ID / MODEL_ARMOR_LOCATION
 ```
 
 ## Run it
 
 ```bash
-# Multi-agent demo: prints the event stream showing delegation to each sub-agent
-python test_agents.py
+# Interactive (the coordinator delegates to the sub-agents):
+adk run multi_agent
+#   "weather in Denver"        -> weather_agent
+#   "who won the last World Cup" -> search_agent
+#   "weather in Paris"         -> blocked (non-US)
 
-# Interactive:
-adk run weather_agent
-# e.g. "weather in Denver" -> weather_agent; "who won the last World Cup" -> search_agent
+# Or the browser dev UI (Cloud Shell: Web Preview on port 8000):
+adk web
+
+# Or the scripted event demo (prints delegation events):
+python test_agents.py
 ```
 
-`test_agents.py` sends one weather question and one general question through the
-**root** agent and prints each event with its author, so you can see the root
-agent transfer to `weather_agent` (which calls `geocode_place`/`get_weather`)
-and to `search_agent` (which calls `google_search`).
+> `adk run multi_agent` / `adk web` load the `multi_agent` **package**, whose
+> entry point is `root_agent` — that's the coordinator, so the CLI shows
+> `Running agent root_agent`.
 
 ## Tests
 
 ```bash
-python -m unittest discover -s tests -v      # 41 unit tests (tools/validation/utils)
+python -m unittest discover -s tests -v      # 48 tests (7 structure tests need the ADK)
 python test_agents.py                        # integration: event stream / delegation
 ```
+
+Unit tests cover the tools, validation logic, CLI city selection, and the
+multi-agent wiring (`tests/test_agent_structure.py` — sub-agents, tools,
+transfer flags, and callback placement). The structure tests require the ADK,
+so they run in Cloud Shell and auto-skip where `google-adk` isn't installed.

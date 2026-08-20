@@ -13,8 +13,8 @@ Run with:
 import unittest
 
 try:  # ADK is required for these tests; skip cleanly if it isn't installed.
-    from weather_agent.agent import root_agent, search_agent, weather_agent
-    from weather_agent.callbacks import (
+    from multi_agent.agent import root_agent, search_agent, weather_agent
+    from multi_agent.callbacks import (
         log_model_response,
         log_user_prompt,
         screen_input_safety,
