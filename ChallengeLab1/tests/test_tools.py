@@ -19,13 +19,9 @@ from unittest.mock import MagicMock, patch
 
 import requests
 
-# Import the tool functions. Prefer the normal package import (works in Cloud
-# Shell where google-adk is installed); fall back to loading tools.py directly
-# so the tests still run in a minimal environment where importing the package
-# __init__ (which pulls in google.adk) would fail.
-try:  # pragma: no cover - exercised implicitly by the environment
+try: 
     from weather_agent.tools import geocode_place, get_weather
-except Exception:  # pragma: no cover
+except Exception:
     import importlib.util
     import pathlib
 
