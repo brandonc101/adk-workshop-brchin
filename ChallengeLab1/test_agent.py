@@ -15,6 +15,8 @@ import sys
 
 from dotenv import load_dotenv
 
+from demo_utils import select_cities
+
 # Load weather_agent/.env so GOOGLE_MAPS_API_KEY and the Vertex/model settings
 # are available when we run this script directly (adk web/run load it for you).
 load_dotenv("weather_agent/.env")
@@ -45,7 +47,7 @@ DEFAULT_CITIES = [
 # Use cities passed on the command line, e.g.
 #     python test_agent.py "Austin, TX" "Boston, MA"
 # otherwise fall back to the default demo set.
-CITIES = sys.argv[1:] or DEFAULT_CITIES
+CITIES = select_cities(sys.argv[1:], DEFAULT_CITIES)
 
 
 async def _ask(runner: Runner, session_id: str, query: str) -> str:
