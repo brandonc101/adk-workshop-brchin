@@ -11,6 +11,7 @@ the real agent (tool calls included) exactly as `adk run` would.
 
 import asyncio
 import os
+import sys
 
 from dotenv import load_dotenv
 
@@ -32,14 +33,19 @@ USER_ID = "test_user"
 MAX_RETRIES = int(os.getenv("MAX_RETRIES", "3"))
 RETRY_DELAY = float(os.getenv("RETRY_DELAY_SECONDS", "20"))
 
-# A spread of US cities in different climate zones.
-CITIES = [
+# Default demo set: a spread of US cities in different climate zones.
+DEFAULT_CITIES = [
     "New York, NY",
     "Chicago, IL",
     "Denver, CO",
     "Miami, FL",
     "Seattle, WA",
 ]
+
+# Use cities passed on the command line, e.g.
+#     python test_agent.py "Austin, TX" "Boston, MA"
+# otherwise fall back to the default demo set.
+CITIES = sys.argv[1:] or DEFAULT_CITIES
 
 
 async def _ask(runner: Runner, session_id: str, query: str) -> str:

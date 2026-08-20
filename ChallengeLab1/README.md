@@ -75,6 +75,9 @@ adk run weather_agent
 # Or the web UI:
 adk web
 
-# Or the automated multi-city demo:
+# Or the automated multi-city demo (default 5 US cities):
 python test_agent.py
+
+# ...or test your own cities by passing them as arguments:
+python test_agent.py "Austin, TX" "Boston, MA"
 ```
