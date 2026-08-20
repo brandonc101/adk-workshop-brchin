@@ -27,10 +27,8 @@ from weather_agent.agent import root_agent  # noqa: E402
 APP_NAME = "weather_app"
 USER_ID = "test_user"
 
-# Optional pacing so a low per-minute model quota (e.g. a third-party model on
-# Vertex AI) doesn't trip a 429. Defaults keep the fast Gemini run unchanged;
-# set CITY_DELAY_SECONDS (e.g. 25) when running against a rate-limited model.
-CITY_DELAY = float(os.getenv("CITY_DELAY_SECONDS", "0"))
+# On a rate-limited model (e.g. a third-party model on Vertex AI with a low
+# per-minute quota), retry transient 429s instead of failing the run.
 MAX_RETRIES = int(os.getenv("MAX_RETRIES", "3"))
 RETRY_DELAY = float(os.getenv("RETRY_DELAY_SECONDS", "20"))
 
@@ -92,9 +90,6 @@ async def main() -> None:
         )
         print(f"\n{'=' * 60}\n{city}\n{'=' * 60}")
         print(await _ask(runner, session_id, query))
-        # Space out cities to stay under low per-minute model quotas.
-        if CITY_DELAY:
-            await asyncio.sleep(CITY_DELAY)
 
 
 if __name__ == "__main__":
