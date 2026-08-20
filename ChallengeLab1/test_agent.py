@@ -10,6 +10,7 @@ the real agent (tool calls included) exactly as `adk run` would.
 """
 
 import asyncio
+import os
 
 from dotenv import load_dotenv
 
@@ -26,6 +27,13 @@ from weather_agent.agent import root_agent  # noqa: E402
 APP_NAME = "weather_app"
 USER_ID = "test_user"
 
+# Optional pacing so a low per-minute model quota (e.g. a third-party model on
+# Vertex AI) doesn't trip a 429. Defaults keep the fast Gemini run unchanged;
+# set CITY_DELAY_SECONDS (e.g. 25) when running against a rate-limited model.
+CITY_DELAY = float(os.getenv("CITY_DELAY_SECONDS", "0"))
+MAX_RETRIES = int(os.getenv("MAX_RETRIES", "3"))
+RETRY_DELAY = float(os.getenv("RETRY_DELAY_SECONDS", "20"))
+
 # A spread of US cities in different climate zones.
 CITIES = [
     "New York, NY",
@@ -37,15 +45,32 @@ CITIES = [
 
 
 async def _ask(runner: Runner, session_id: str, query: str) -> str:
-    """Send one query to the agent and return its final text response."""
+    """Send one query to the agent and return its final text response.
+
+    Retries on transient rate-limit errors (HTTP 429 / RESOURCE_EXHAUSTED),
+    which low per-minute model quotas can trigger.
+    """
     message = types.Content(role="user", parts=[types.Part(text=query)])
-    final_text = ""
-    async for event in runner.run_async(
-        user_id=USER_ID, session_id=session_id, new_message=message
-    ):
-        if event.is_final_response() and event.content and event.content.parts:
-            final_text = event.content.parts[0].text
-    return final_text
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            final_text = ""
+            async for event in runner.run_async(
+                user_id=USER_ID, session_id=session_id, new_message=message
+            ):
+                if event.is_final_response() and event.content and event.content.parts:
+                    final_text = event.content.parts[0].text
+            return final_text
+        except Exception as exc:  # noqa: BLE001 - re-raised after retries
+            is_rate_limit = "429" in str(exc) or "RESOURCE_EXHAUSTED" in str(exc)
+            if is_rate_limit and attempt < MAX_RETRIES:
+                print(
+                    f"  [rate limited; waiting {RETRY_DELAY:.0f}s then retrying "
+                    f"(attempt {attempt}/{MAX_RETRIES})]"
+                )
+                await asyncio.sleep(RETRY_DELAY)
+                continue
+            raise
+    return ""
 
 
 async def main() -> None:
@@ -67,6 +92,9 @@ async def main() -> None:
         )
         print(f"\n{'=' * 60}\n{city}\n{'=' * 60}")
         print(await _ask(runner, session_id, query))
+        # Space out cities to stay under low per-minute model quotas.
+        if CITY_DELAY:
+            await asyncio.sleep(CITY_DELAY)
 
 
 if __name__ == "__main__":
