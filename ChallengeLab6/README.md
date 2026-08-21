@@ -55,6 +55,53 @@ flowchart TD
 | `route_agent` | `route_agent.py` | Driving routes to safety (Google Maps Directions) |
 | `answer_team` | `answer_team.py` | Sequential validate/refine: `research_agent → critique_agent → refine_agent` |
 
+## Design decisions
+
+* **Agents-as-tools coordination.** The root exposes each specialist as a tool
+  (not a transfer target), so a single request can use *multiple* capabilities
+  and be answered in one turn — e.g. "the weather in Miami **and** any US severe
+  weather warnings" calls both `weather_agent` and `search_agent`, then composes
+  one answer.
+* **Validate & refine as a Sequential workflow.** `answer_team` runs
+  research → critique → refine so answers are checked and rewritten before they
+  reach the user, satisfying "responses are valid, well-written, and clear."
+* **Search-grounded facts are preserved.** Critique/refine are instructed to
+  treat the search draft as authoritative and to never "correct" current facts
+  from the model's (older) training knowledge — this prevents date/fact
+  regressions (e.g. rewinding 2026 events to 2024).
+* **US-only weather with graceful degradation.** The NWS API is US-only; the
+  weather agent geocodes and politely declines non-US locations instead of
+  returning wrong data.
+* **Fail-open input screening.** Google Cloud Model Armor screens input for
+  malicious content; if it is unconfigured or errors, the agent logs a warning
+  and proceeds (availability over false blocks) — appropriate for a POC.
+* **Mission scoping.** The root declines requests unrelated to emergencies,
+  safety, weather, news, or routes, keeping ReadyNow! on-mission.
+* **Reproducible deployment.** `deploy.py` pins `google-adk` to the local
+  version and routes Gemini through Vertex, so the deployed runtime matches
+  local behavior.
+* **Testable by construction.** Pure logic (tools, validation, event parsing)
+  is unit-tested offline; the ADK wiring is checked by structure tests that run
+  in Cloud Shell.
+
+## Demonstrating the requirements
+
+| To show... | Try this |
+| --- | --- |
+| Real-time weather + alerts | `weather in Miami, FL` |
+| News / nationwide alerts | `any severe weather warnings in the US right now?` |
+| Multi-part request (both at once) | `weather in Miami, FL AND any severe weather warnings in the US?` |
+| Routes to safety | `directions from Sacramento, CA to UC Davis Medical Center` |
+| Validate & refine | any general question (runs research → critique → refine) |
+| Input validation / off-mission refusal | `write me a poem about my cat` (declined) |
+| Logging of all interactions | watch the `[USER PROMPT]` / `[MODEL RESPONSE]` log lines |
+
+Capture a full run as evidence:
+
+```bash
+python test_agents.py 2>&1 | tee demo_output.txt
+```
+
 ## Setup (Google Cloud Shell)
 
 ```bash
