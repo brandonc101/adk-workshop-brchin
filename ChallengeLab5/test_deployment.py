@@ -26,15 +26,23 @@ QUERIES = [
 ]
 
 
-def _print_text(event) -> None:
-    """Print any text parts contained in a streamed Agent Engine event."""
-    content = event.get("content") if isinstance(event, dict) else None
-    if not content:
-        return
-    for part in content.get("parts", []):
-        text = part.get("text")
-        if text and text.strip():
-            print(text.strip())
+def _get(obj, key):
+    """Read ``key`` from a dict or an object attribute (Agent Engine events)."""
+    if isinstance(obj, dict):
+        return obj.get(key)
+    return getattr(obj, key, None)
+
+
+def _extract_texts(event) -> list:
+    """Return the text parts of a streamed Agent Engine event, if any."""
+    content = _get(event, "content")
+    parts = _get(content, "parts") if content is not None else None
+    texts = []
+    for part in parts or []:
+        text = _get(part, "text")
+        if text and str(text).strip():
+            texts.append(str(text).strip())
+    return texts
 
 
 def main() -> None:
@@ -53,10 +61,21 @@ def main() -> None:
 
     for query in QUERIES:
         print(f"\n{'=' * 60}\nQUERY: {query}\n{'=' * 60}")
+        saw_output = False
+        last_event = None
         for event in remote_app.stream_query(
             user_id=USER_ID, session_id=session_id, message=query
         ):
-            _print_text(event)
+            last_event = event
+            author = _get(event, "author") or "?"
+            for text in _extract_texts(event):
+                print(f"[{author}] {text}")
+                saw_output = True
+        if not saw_output:
+            # Nothing matched our text extraction - show the raw shape so we
+            # can see what the deployed agent returned.
+            print("(no text parts found; last raw event below)")
+            print(repr(last_event)[:800])
 
 
 if __name__ == "__main__":
