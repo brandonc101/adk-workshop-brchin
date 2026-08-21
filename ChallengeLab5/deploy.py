@@ -58,14 +58,14 @@ def main() -> None:
         # Local package(s) uploaded with the deployment.
         extra_packages=["qa_agent"],
         # Runtime configuration for the deployed agent.
+        # NOTE: GOOGLE_CLOUD_PROJECT / GOOGLE_CLOUD_LOCATION are reserved by
+        # Agent Engine (set automatically) - do NOT pass them here.
         env_vars={
             "MODEL_BACKEND": "gemini",
             # Route Gemini through Vertex AI in the deployed runtime (otherwise
             # the google-genai client defaults to the Developer API and fails
             # with no API key, which surfaces as a NoneType subscript error).
             "GOOGLE_GENAI_USE_VERTEXAI": "TRUE",
-            "GOOGLE_CLOUD_PROJECT": project,
-            "GOOGLE_CLOUD_LOCATION": location,
             # Pin a broadly-available model.
             "GEMINI_MODEL": os.getenv("GEMINI_MODEL", "gemini-2.0-flash"),
             "GOOGLE_MAPS_API_KEY": os.getenv("GOOGLE_MAPS_API_KEY", ""),
