@@ -85,6 +85,14 @@ vertexai.init(project=os.environ['GOOGLE_CLOUD_PROJECT'], location='us-central1'
 agent_engines.get(os.environ['AGENT_ENGINE_RESOURCE']).delete(force=True)"
 ```
 
+> **Pin `google-adk` to your local version.** The deployed runtime must use the
+> same `google-adk` as your Cloud Shell (`pip show google-adk`). If it installs
+> a different "latest" version, the agent can fail at runtime with
+> `TypeError: 'NoneType' object is not subscriptable` (returned in the event, no
+> traceback). `deploy.py` pins `google-adk==2.6.2` and
+> `google-cloud-aiplatform==1.163.0` for this reason — update the pins to match
+> your environment if they differ.
+
 > **Note on import paths:** the Agent Engine SDK is evolving. If `deploy.py`
 > errors on `from vertexai.preview import reasoning_engines`, your installed
 > `google-cloud-aiplatform` may expose it as `from vertexai import agent_engines`
