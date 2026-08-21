@@ -1,0 +1,6 @@
+google-adk
+google-cloud-aiplatform[adk,agent_engines]
+litellm
+requests
+python-dotenv
+google-cloud-modelarmor
