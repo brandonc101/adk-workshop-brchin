@@ -66,8 +66,7 @@ def main() -> None:
             # the google-genai client defaults to the Developer API and fails
             # with no API key, which surfaces as a NoneType subscript error).
             "GOOGLE_GENAI_USE_VERTEXAI": "TRUE",
-            # Pin a broadly-available model.
-            "GEMINI_MODEL": os.getenv("GEMINI_MODEL", "gemini-2.0-flash"),
+            "GEMINI_MODEL": os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
             "GOOGLE_MAPS_API_KEY": os.getenv("GOOGLE_MAPS_API_KEY", ""),
             "MODEL_ARMOR_TEMPLATE_ID": os.getenv("MODEL_ARMOR_TEMPLATE_ID", ""),
             "MODEL_ARMOR_LOCATION": os.getenv("MODEL_ARMOR_LOCATION", "us"),
