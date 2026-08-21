@@ -14,6 +14,7 @@ Run from the ChallengeLab5 directory:
 """
 
 import os
+import sys
 
 import vertexai
 from vertexai import agent_engines
@@ -42,7 +43,9 @@ def main() -> None:
     session = remote_app.create_session(user_id=USER_ID)
     session_id = session["id"] if isinstance(session, dict) else session.id
 
-    for query in QUERIES:
+    # Use any messages passed on the command line, else the default demo pair.
+    queries = sys.argv[1:] or QUERIES
+    for query in queries:
         print(f"\n{'=' * 60}\nQUERY: {query}\n{'=' * 60}")
         saw_output = False
         last_event = None
