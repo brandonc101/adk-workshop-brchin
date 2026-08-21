@@ -36,6 +36,10 @@ flowchart TD
     ROOT -. logs .-> LOG[[Cloud Logging]]
 ```
 
+> A standalone, styled version of this diagram is in
+> [`architecture.html`](./architecture.html) — open it in a browser for a
+> rendered visual (light/dark theme-aware).
+
 ## Requirements → implementation
 
 | Case-study requirement | How it's met |

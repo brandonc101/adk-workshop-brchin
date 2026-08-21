@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ReadyNow! — Architecture</title>
+<style>
+  :root {
+    --bg: #eef2f6;
+    --surface: #ffffff;
+    --surface-2: #f6f9fc;
+    --ink: #0e1a24;
+    --muted: #5a6b7b;
+    --faint: #8496a6;
+    --border: #d3dce6;
+    --accent: #d9761a;        /* signal amber — coordinator */
+    --agent: #2f6db3;         /* specialist agents */
+    --agent-bg: #e9f1fa;
+    --flow: #0f8f83;          /* sequential workflow */
+    --flow-bg: #e2f5f2;
+    --amber-bg: #fbeede;
+    --service: #556677;       /* external services */
+    --service-bg: #eef2f6;
+    --line: #b9c6d3;
+    --shadow: 0 1px 2px rgba(16,26,36,.06), 0 6px 18px rgba(16,26,36,.06);
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0a1119; --surface: #111c26; --surface-2: #0e1821;
+      --ink: #e7eef4; --muted: #93a5b5; --faint: #6b7d8d; --border: #21313f;
+      --accent: #f0a24a; --agent: #61a0dc; --agent-bg: #10202f;
+      --flow: #33c2b2; --flow-bg: #0c2420; --amber-bg: #241a10;
+      --service: #94a6b6; --service-bg: #13202b; --line: #2c3f4f;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #eef2f6; --surface: #ffffff; --surface-2: #f6f9fc; --ink: #0e1a24;
+    --muted: #5a6b7b; --faint: #8496a6; --border: #d3dce6; --accent: #d9761a;
+    --agent: #2f6db3; --agent-bg: #e9f1fa; --flow: #0f8f83; --flow-bg: #e2f5f2;
+    --amber-bg: #fbeede; --service: #556677; --service-bg: #eef2f6; --line: #b9c6d3;
+    --shadow: 0 1px 2px rgba(16,26,36,.06), 0 6px 18px rgba(16,26,36,.06);
+  }
+  :root[data-theme="dark"] {
+    --bg: #0a1119; --surface: #111c26; --surface-2: #0e1821; --ink: #e7eef4;
+    --muted: #93a5b5; --faint: #6b7d8d; --border: #21313f; --accent: #f0a24a;
+    --agent: #61a0dc; --agent-bg: #10202f; --flow: #33c2b2; --flow-bg: #0c2420;
+    --amber-bg: #241a10; --service: #94a6b6; --service-bg: #13202b; --line: #2c3f4f;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: var(--sans); line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 40px 24px 56px; }
+
+  /* Header */
+  .eyebrow {
+    font-family: var(--mono); font-size: 12px; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--accent); margin: 0 0 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .eyebrow::before {
+    content: ""; width: 22px; height: 2px; background: var(--accent); display: inline-block;
+  }
+  h1 {
+    font-size: clamp(28px, 4vw, 40px); line-height: 1.08; margin: 0 0 12px;
+    letter-spacing: -.02em; text-wrap: balance; font-weight: 800;
+  }
+  h1 .rest { color: var(--muted); font-weight: 700; }
+  .goal { margin: 0; max-width: 68ch; color: var(--muted); font-size: 16px; }
+  .goal strong { color: var(--ink); font-weight: 650; }
+
+  /* Diagram frame */
+  .diagram-scroll { overflow-x: auto; margin: 34px 0 10px; }
+  .diagram {
+    min-width: 720px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 16px;
+    box-shadow: var(--shadow); padding: 26px 26px 30px;
+    display: flex; flex-direction: column; align-items: center; gap: 0;
+  }
+
+  .tier-label {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--faint); align-self: flex-start;
+    margin: 0 0 8px;
+  }
+
+  /* nodes */
+  .node {
+    border: 1.5px solid var(--border); border-radius: 12px; background: var(--surface);
+    padding: 12px 18px; text-align: center; box-shadow: var(--shadow);
+  }
+  .node .t { font-weight: 700; font-size: 15px; letter-spacing: -.01em; }
+  .node .s { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+
+  .user {
+    background: var(--surface-2); border-radius: 999px; padding: 9px 22px;
+    font-weight: 700; letter-spacing: .01em;
+  }
+
+  /* connector */
+  .conn { width: 2px; height: 26px; background: var(--line); position: relative; }
+  .conn.short { height: 18px; }
+  .conn::after {
+    content: ""; position: absolute; bottom: -1px; left: 50%; transform: translateX(-50%);
+    border-left: 5px solid transparent; border-right: 5px solid transparent;
+    border-top: 6px solid var(--line);
+  }
+  .conn-note {
+    font-family: var(--mono); font-size: 10.5px; color: var(--faint);
+    letter-spacing: .04em; padding: 6px 0;
+  }
+
+  /* callbacks band */
+  .band {
+    width: 100%; border: 1.5px dashed var(--line); border-radius: 12px;
+    background: var(--surface-2); padding: 12px 14px;
+    display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap;
+  }
+  .band .band-label {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--muted); margin-right: 4px;
+  }
+  .chip {
+    font-family: var(--mono); font-size: 12px; padding: 5px 11px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--surface); color: var(--ink);
+    display: inline-flex; align-items: center; gap: 7px; white-space: nowrap;
+  }
+  .chip .dir { color: var(--faint); font-size: 11px; }
+
+  /* coordinator */
+  .coordinator {
+    border-color: var(--accent); background: var(--amber-bg);
+    border-width: 2px; padding: 16px 26px; max-width: 520px;
+  }
+  .coordinator .t { font-size: 17px; color: var(--ink); }
+  .coordinator .badge {
+    display: inline-block; font-family: var(--mono); font-size: 10px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--accent); border: 1px solid var(--accent);
+    border-radius: 6px; padding: 2px 7px; margin-bottom: 6px;
+  }
+
+  /* specialists grid */
+  .lanes {
+    width: 100%; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+    align-items: start;
+  }
+  .lane { display: flex; flex-direction: column; align-items: center; gap: 0; }
+  .agent {
+    width: 100%; border-color: var(--agent); background: var(--agent-bg); border-width: 1.5px;
+  }
+  .agent .t { color: var(--agent); }
+  :root[data-theme="dark"] .agent .t,
+  @media (prefers-color-scheme: dark) { }
+  .agent .role { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+
+  /* sequential workflow lane */
+  .workflow {
+    width: 100%; border: 1.5px solid var(--flow); background: var(--flow-bg);
+    border-radius: 12px; padding: 12px; box-shadow: var(--shadow);
+  }
+  .workflow .wf-head { font-weight: 700; font-size: 15px; color: var(--flow); text-align: center; }
+  .workflow .wf-sub {
+    font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--muted); text-align: center; margin-top: 1px; margin-bottom: 9px;
+  }
+  .steps { display: flex; flex-direction: column; gap: 6px; }
+  .step {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 7px 10px; font-size: 12.5px; font-weight: 600; text-align: center;
+    position: relative;
+  }
+  .step .n {
+    font-family: var(--mono); font-size: 10px; color: var(--flow); margin-right: 6px;
+  }
+  .step-arrow { text-align: center; color: var(--line); font-size: 12px; line-height: .4; }
+
+  /* service nodes */
+  .svc {
+    font-family: var(--mono); font-size: 11px; color: var(--service);
+    background: var(--service-bg); border: 1px solid var(--border);
+    border-radius: 7px; padding: 5px 9px; text-align: center; width: 100%;
+  }
+  .svc-stack { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+  .lane .conn { height: 16px; }
+
+  /* platform footer inside diagram */
+  .platform {
+    width: 100%; margin-top: 22px; border-top: 1px solid var(--border); padding-top: 16px;
+    display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+  }
+  .pill {
+    font-family: var(--mono); font-size: 11px; color: var(--muted);
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 999px; padding: 5px 12px;
+  }
+  .pill b { color: var(--ink); font-weight: 700; }
+
+  /* legend */
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 14px 22px; margin: 8px 2px 0;
+    font-size: 12.5px; color: var(--muted);
+  }
+  .legend .k { display: inline-flex; align-items: center; gap: 8px; }
+  .sw { width: 22px; height: 13px; border-radius: 4px; border: 1.5px solid; display: inline-block; }
+  .sw.coord { border-color: var(--accent); background: var(--amber-bg); }
+  .sw.ag { border-color: var(--agent); background: var(--agent-bg); }
+  .sw.wf { border-color: var(--flow); background: var(--flow-bg); }
+  .sw.cb { border-color: var(--line); background: var(--surface-2); border-style: dashed; }
+  .sw.sv { border-color: var(--border); background: var(--service-bg); }
+
+  /* requirements strip */
+  .req { margin-top: 40px; }
+  .req h2 {
+    font-size: 13px; font-family: var(--mono); letter-spacing: .12em; text-transform: uppercase;
+    color: var(--faint); margin: 0 0 14px; font-weight: 600;
+  }
+  .req-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .rq {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 13px 15px; box-shadow: var(--shadow);
+  }
+  .rq .cap { font-weight: 700; font-size: 13.5px; margin-bottom: 3px; }
+  .rq .by { font-size: 12.5px; color: var(--muted); }
+  .rq .by code {
+    font-family: var(--mono); font-size: 11.5px; color: var(--agent);
+    background: var(--agent-bg); padding: 1px 5px; border-radius: 5px;
+  }
+
+  footer {
+    margin-top: 34px; padding-top: 16px; border-top: 1px solid var(--border);
+    font-size: 12px; color: var(--faint); font-family: var(--mono); letter-spacing: .03em;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">ReadyNow! · FEMA proof of concept</p>
+  <h1>Emergency-response agent <span class="rest">— solution architecture</span></h1>
+  <p class="goal">
+    Help people get real-time updates during a disaster so they know
+    <strong>what's going on, where to go, and how to stay safe</strong> — using
+    weather data, internet &amp; news search, evacuation routes, and safety
+    information tailored to the user's location and situation.
+  </p>
+
+  <div class="diagram-scroll">
+    <div class="diagram">
+
+      <div class="user node">User — location &amp; situation</div>
+
+      <div class="conn"><span class="conn-note"></span></div>
+
+      <p class="tier-label" style="align-self:center; margin-bottom:6px;">Callbacks — every interaction is logged; input is validated</p>
+      <div class="band">
+        <span class="band-label">before →</span>
+        <span class="chip">log_user_prompt</span>
+        <span class="chip">screen_input_safety <span class="dir">· Cloud Model Armor</span></span>
+        <span class="band-label" style="margin-left:6px;">after ←</span>
+        <span class="chip">log_model_response</span>
+      </div>
+
+      <div class="conn short"></div>
+
+      <div class="coordinator node">
+        <span class="badge">Root coordinator</span>
+        <div class="t">ReadyNow! root_agent</div>
+        <div class="s">Describes the mission · refuses off-mission requests · calls the
+          specialists below as tools and composes one clear answer</div>
+      </div>
+
+      <div class="conn"><span class="conn-note">calls one or more specialists per turn</span></div>
+
+      <div class="lanes">
+        <!-- weather -->
+        <div class="lane">
+          <div class="agent node">
+            <div class="t">weather_agent</div>
+            <div class="role">Forecasts &amp; hazard alerts (US)</div>
+          </div>
+          <div class="conn"></div>
+          <div class="svc-stack">
+            <div class="svc">NWS API</div>
+            <div class="svc">Maps Geocoding</div>
+          </div>
+        </div>
+
+        <!-- search -->
+        <div class="lane">
+          <div class="agent node">
+            <div class="t">search_agent</div>
+            <div class="role">Real-time news &amp; alerts</div>
+          </div>
+          <div class="conn"></div>
+          <div class="svc">Google Search</div>
+        </div>
+
+        <!-- route -->
+        <div class="lane">
+          <div class="agent node">
+            <div class="t">route_agent</div>
+            <div class="role">Evacuation routes to safety</div>
+          </div>
+          <div class="conn"></div>
+          <div class="svc">Maps Directions</div>
+        </div>
+
+        <!-- answer team -->
+        <div class="lane">
+          <div class="workflow">
+            <div class="wf-head">answer_team</div>
+            <div class="wf-sub">Sequential · validate &amp; refine</div>
+            <div class="steps">
+              <div class="step"><span class="n">1</span>research_agent</div>
+              <div class="step-arrow">▼</div>
+              <div class="step"><span class="n">2</span>critique_agent</div>
+              <div class="step-arrow">▼</div>
+              <div class="step"><span class="n">3</span>refine_agent</div>
+            </div>
+          </div>
+          <div class="conn"></div>
+          <div class="svc">Google Search</div>
+        </div>
+      </div>
+
+      <div class="platform">
+        <span class="pill">Runtime: <b>Vertex AI Agent Engine</b></span>
+        <span class="pill">Model: <b>Gemini</b> on Vertex AI</span>
+        <span class="pill">Logs: <b>Cloud Logging</b></span>
+        <span class="pill">Safety: <b>Cloud Model Armor</b></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span class="k"><span class="sw coord"></span> Root coordinator</span>
+    <span class="k"><span class="sw ag"></span> Specialist agent</span>
+    <span class="k"><span class="sw wf"></span> Sequential workflow</span>
+    <span class="k"><span class="sw cb"></span> Callback (logging / validation)</span>
+    <span class="k"><span class="sw sv"></span> External API / data source</span>
+  </div>
+
+  <section class="req">
+    <h2>How the architecture meets the case study</h2>
+    <div class="req-grid">
+      <div class="rq"><div class="cap">Real-time weather &amp; news alerts</div>
+        <div class="by"><code>weather_agent</code> + <code>search_agent</code></div></div>
+      <div class="rq"><div class="cap">Suggested routes to safety</div>
+        <div class="by"><code>route_agent</code> → Maps Directions</div></div>
+      <div class="rq"><div class="cap">Log all interactions</div>
+        <div class="by">log_user_prompt / log_model_response callbacks</div></div>
+      <div class="rq"><div class="cap">Validate input · refuse off-mission</div>
+        <div class="by">Model Armor screen + coordinator mission scope</div></div>
+      <div class="rq"><div class="cap">Valid, well-written responses</div>
+        <div class="by"><code>answer_team</code>: research → critique → refine</div></div>
+      <div class="rq"><div class="cap">Deployed to Agent Platform</div>
+        <div class="by">Vertex AI Agent Engine (<code>deploy.py</code>)</div></div>
+    </div>
+  </section>
+
+  <footer>ReadyNow! · multi-agent solution built with the Google Agent Development Kit (ADK)</footer>
+</div>
+</body>
+</html>
