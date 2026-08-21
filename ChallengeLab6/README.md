@@ -1,9 +1,14 @@
 # ReadyNow! — Challenge Lab 6 (FEMA case study)
 
-A proof-of-concept emergency-preparedness assistant built with the ADK, and
+**Goal:** help people get real-time updates during a disaster so they know
+**what's going on, where to go, and how to stay safe** — using weather data,
+internet/news search, evacuation routes, and safety information tailored to the
+user's location and current situation.
+
+A proof-of-concept emergency-preparedness assistant built with the ADK and
 deployed to Vertex AI Agent Engine. It integrates the capabilities from Labs
 1–5 (multi-agent coordination, a verify/refine workflow, logging + input
-validation, and deployment) and adds **routing to safety**.
+validation, and deployment) and adds **evacuation routing to safety**.
 
 ## Architecture
 
