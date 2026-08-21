@@ -9,6 +9,7 @@ Challenge lab work for the Agent Development Kit (ADK) workshop.
 | [ChallengeLab3](./ChallengeLab3) | Multi-agent system — a coordinator (root) agent delegates to a weather sub-agent and a Google Search sub-agent; test harness prints the event stream. |
 | [ChallengeLab4](./ChallengeLab4) | Answer-team workflow — a coordinator routes to a greeter, a weather agent, or a Sequential answer team (search → critique → refine) that answers, verifies, and refines responses. |
 | [ChallengeLab5](./ChallengeLab5) | Deployment — deploys the Lab 4 agent to Vertex AI Agent Engine (Agent Platform) with `deploy.py`, and verifies it live with `test_deployment.py`. |
+| [ChallengeLab6](./ChallengeLab6) | ReadyNow! FEMA case study — an emergency-preparedness assistant: root coordinator + weather/search/route sub-agents + a validate/refine answer team, with logging, Model Armor input validation, and Agent Engine deployment. Includes an architecture diagram. |
 
 Each lab is self-contained in its own directory. See that directory's
 `README.md` for setup and run instructions.
