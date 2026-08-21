@@ -60,8 +60,13 @@ def _tool_names(agent):
 
 @unittest.skipUnless(_ADK_AVAILABLE, "google-adk not installed in this environment")
 class ReadyNowStructureTests(unittest.TestCase):
-    def test_root_has_four_specialist_sub_agents(self):
-        names = {sa.name for sa in root_agent.sub_agents}
+    def test_root_wraps_four_specialists_as_tools(self):
+        # The specialists are exposed as AgentTools so the coordinator can call
+        # more than one per turn (multi-part requests).
+        names = set()
+        for tool in root_agent.tools:
+            wrapped = getattr(tool, "agent", None)
+            names.add(getattr(tool, "name", None) or getattr(wrapped, "name", None))
         self.assertEqual(
             names, {"weather_agent", "search_agent", "route_agent", "answer_team"}
         )

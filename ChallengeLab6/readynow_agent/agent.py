@@ -2,7 +2,9 @@
 
 ReadyNow! is an emergency-preparedness assistant (a FEMA proof of concept). The
 root agent describes what the assistant can do, validates and logs input, and
-coordinates the specialist sub-agents:
+coordinates the specialist sub-agents - each exposed as a tool so the
+coordinator can call one or more of them in a single turn and combine their
+results (e.g. a local forecast AND nationwide alerts in one request):
 
 * ``weather_agent`` - US weather forecasts and alerts.
 * ``search_agent``  - real-time internet and news search / alerts.
@@ -19,6 +21,7 @@ off-mission requests are declined. Every prompt and response is logged.
 import logging
 
 from google.adk.agents import Agent
+from google.adk.tools.agent_tool import AgentTool
 
 from .answer_team import answer_team
 from .callbacks import log_model_response, log_user_prompt, screen_input_safety
@@ -34,20 +37,21 @@ _INSTRUCTION = """\
 You are ReadyNow!, an emergency-preparedness assistant built for FEMA. Your
 mission is to help people stay safe before, during, and after emergencies.
 
-You can:
-* Give current US weather forecasts and hazard alerts.
-* Search the internet for real-time news, emergency alerts, and advisories.
-* Provide driving routes to safety (shelters, hospitals, evacuation).
-* Answer general safety and preparedness questions with verified information.
+You have four specialist tools:
+* `weather_agent` - current US weather forecasts and hazard alerts for a place.
+* `search_agent`  - real-time internet/news search (breaking news, nationwide
+  alerts and advisories).
+* `route_agent`   - driving routes to safety (shelters, hospitals, evacuation).
+* `answer_team`   - researched, verified answers to general safety questions.
 
-If a user simply greets you or asks what you can do, briefly introduce yourself
-and list these capabilities.
+For each user message, decide which tool(s) are needed and call them. A single
+message may need MORE THAN ONE tool - for example "the weather in Miami AND any
+severe weather warnings in the US" should call BOTH `weather_agent` (Miami) and
+`search_agent` (nationwide warnings). After the tools return, compose one clear,
+well-written answer that addresses every part of the request.
 
-Delegate each request to the most appropriate sub-agent:
-* Weather or forecast questions -> `weather_agent`.
-* Requests for news, current events, alerts, or general web search -> `search_agent`.
-* Requests for directions, evacuation, or how to get to safety -> `route_agent`.
-* Other questions that need a researched, verified answer -> `answer_team`.
+If the user simply greets you or asks what you can do, briefly introduce
+yourself and list these capabilities (do not call a tool).
 
 IMPORTANT - stay on mission. If a request is not related to emergencies,
 safety, preparedness, weather, news/alerts, or routes to safety, politely
@@ -59,11 +63,17 @@ root_agent = Agent(
     name="root_agent",
     model=resolve_model(),
     description=(
-        "ReadyNow! coordinator - routes emergency-preparedness requests to the "
-        "weather, search, route, and answer-team sub-agents."
+        "ReadyNow! coordinator - uses the weather, search, route, and "
+        "answer-team specialists (as tools) to handle emergency-preparedness "
+        "requests, including multi-part questions."
     ),
     instruction=_INSTRUCTION,
-    sub_agents=[weather_agent, search_agent, route_agent, answer_team],
+    tools=[
+        AgentTool(agent=weather_agent),
+        AgentTool(agent=search_agent),
+        AgentTool(agent=route_agent),
+        AgentTool(agent=answer_team),
+    ],
     # Log every prompt and screen it for malicious content before routing.
     before_model_callback=[log_user_prompt, screen_input_safety],
     after_model_callback=log_model_response,
