@@ -53,12 +53,15 @@ export AGENT_ENGINE_RESOURCE=projects/.../reasoningEngines/1234567890
 ## Verify it's deployed and running
 
 ```bash
-# List deployed agents
-gcloud ai reasoning-engines list --region=${GOOGLE_CLOUD_LOCATION}
+# List deployed agents (works across gcloud versions)
+python list_deployments.py
 
 # Query the deployed agent (greeting + question)
 python test_deployment.py
 ```
+
+> `gcloud ai reasoning-engines list` exists only in newer gcloud versions; use
+> `python list_deployments.py` (or the Console) to list deployments.
 
 `test_deployment.py` connects by `AGENT_ENGINE_RESOURCE`, creates a session, and
 streams a greeting and a question, printing the deployed agent's responses — so
@@ -77,7 +80,9 @@ adk run qa_agent                           # interactive, locally
 ## Clean up (optional)
 
 ```bash
-gcloud ai reasoning-engines delete ${AGENT_ENGINE_RESOURCE} --region=${GOOGLE_CLOUD_LOCATION}
+python -c "import os,vertexai; from vertexai import agent_engines; \
+vertexai.init(project=os.environ['GOOGLE_CLOUD_PROJECT'], location='us-central1'); \
+agent_engines.get(os.environ['AGENT_ENGINE_RESOURCE']).delete(force=True)"
 ```
 
 > **Note on import paths:** the Agent Engine SDK is evolving. If `deploy.py`
