@@ -18,31 +18,14 @@ import os
 import vertexai
 from vertexai import agent_engines
 
+from event_utils import extract_texts, get_field
+
 USER_ID = "test_user"
 
 QUERIES = [
     "Hi there!",
     "What is the tallest mountain in the world, and how tall is it?",
 ]
-
-
-def _get(obj, key):
-    """Read ``key`` from a dict or an object attribute (Agent Engine events)."""
-    if isinstance(obj, dict):
-        return obj.get(key)
-    return getattr(obj, key, None)
-
-
-def _extract_texts(event) -> list:
-    """Return the text parts of a streamed Agent Engine event, if any."""
-    content = _get(event, "content")
-    parts = _get(content, "parts") if content is not None else None
-    texts = []
-    for part in parts or []:
-        text = _get(part, "text")
-        if text and str(text).strip():
-            texts.append(str(text).strip())
-    return texts
 
 
 def main() -> None:
@@ -67,8 +50,8 @@ def main() -> None:
             user_id=USER_ID, session_id=session_id, message=query
         ):
             last_event = event
-            author = _get(event, "author") or "?"
-            for text in _extract_texts(event):
+            author = get_field(event, "author") or "?"
+            for text in extract_texts(event):
                 print(f"[{author}] {text}")
                 saw_output = True
         if not saw_output:
