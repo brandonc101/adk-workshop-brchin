@@ -48,8 +48,10 @@ def main() -> None:
         ),
         # Packages installed in the deployed runtime.
         requirements=[
-            "google-cloud-aiplatform[adk,agent_engines]",
-            "google-adk",
+            # Pin to the versions that work in Cloud Shell (adk run) so the
+            # deployed runtime behaves identically.
+            "google-cloud-aiplatform[adk,agent_engines]==1.163.0",
+            "google-adk==2.6.2",
             "litellm",
             "requests",
             "python-dotenv",
